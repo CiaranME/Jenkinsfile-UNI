@@ -9,11 +9,11 @@ pipeline {
         }
         stage('Trivy FS Scan') {
             steps {
-                sh 'trivy fs --format table -o trivy-fs-report.txt .'
+                sh 'trivy fs --format json -o trivy-fs-report.json .'
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'trivy-fs-report.txt'
+                    archiveArtifacts artifacts: 'trivy-fs-report.json'
                 }
             }
         }
@@ -30,11 +30,11 @@ pipeline {
         }
         stage('Trivy Image Scan') {
             steps {
-                sh 'trivy image --format table -o trivy-image-report.txt flask-app'
+                sh 'trivy image --format json -o trivy-image-report.json flask-app'
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'trivy-image-report.txt'
+                    archiveArtifacts artifacts: 'trivy-image-report.json'
                 }
             }
         }
