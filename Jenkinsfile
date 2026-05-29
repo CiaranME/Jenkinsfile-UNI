@@ -42,6 +42,11 @@ pipeline {
                 }
             }
         }
+        stage('Approval') {
+            steps {
+                input message: 'Scans complete. Review results and approve to deploy?', ok: 'Deploy'
+            }
+        }
         stage('Run Containers') {
             steps {
                 sh 'docker run -d --name flask --network app-network flask-app'
