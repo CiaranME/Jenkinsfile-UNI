@@ -71,5 +71,25 @@ pipeline {
                 }
             }
         }
+        stage('Generate Metadata') {
+            steps {
+                sh '''
+                    echo {
+                        "buildNumber": "${BUILD_NUMBER}",
+                        "gitCommit": "${GIT_COMMIT}",
+                        "imageName": "${IMAGE_NAME}",
+                        "imageTag": "${IMAGE_TAG}",
+                        "buildTime": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                    } > build-metadata.json
+                '''
+                archiveArtifacts artifacts: 'build-metadata.json'
+            }
+        }
+        stage('Generate SBOM') {
+            steps {
+                sh 'trivy image --format cyclonedx -o sbom.json ${IMAGE_NAME}:${IMAGE_TAG}'
+                archiveArtifacts artifacts: 'sbom.json'
+            }
+        }
     }
 }
