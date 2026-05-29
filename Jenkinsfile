@@ -1,23 +1,27 @@
 pipeline {
     agent any
     stages {
-        stage('Build') {
+        stage('Clean Up') {
             steps {
-                sh 'echo "Building..."'
-                sh 'touch build.txt'
+                sh 'docker rm -f flask nginx || true'
+                sh 'docker network rm app-network || true'
             }
         }
-        stage('Test') {
+        stage('Set Up') {
             steps {
-                sh 'echo "Testing..."'
-                sh 'ls -la'
+                sh 'docker network create app-network'
             }
         }
-        stage('Deploy') {
+        stage('Build Images') {
             steps {
-                sh 'echo "Deploying..."'
-                sh 'pwd'
-                sh 'mv build.txt deployed.txt'
+                sh 'docker build -t flask-app -f Dockerfile.flask .'
+                sh 'docker build -t nginx-app -f Dockerfile.nginx .'
+            }
+        }
+        stage('Run Containers') {
+            steps {
+                sh 'docker run -d --name flask --network app-network flask-app'
+                sh 'docker run -d --name nginx --network app-network -p 80:80 nginx-app'
             }
         }
     }
