@@ -7,6 +7,16 @@ pipeline {
                 sh 'docker network rm app-network || true'
             }
         }
+        stage('Trivy FS Scan') {
+            steps {
+                sh 'trivy fs --format table -o trivy-fs-report.txt .'
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'trivy-fs-report.txt'
+                }
+            }
+        }
         stage('Set Up') {
             steps {
                 sh 'docker network create app-network'
@@ -16,6 +26,16 @@ pipeline {
             steps {
                 sh 'docker build -t flask-app -f Dockerfile.flask .'
                 sh 'docker build -t nginx-app -f Dockerfile.nginx .'
+            }
+        }
+        stage('Trivy Image Scan') {
+            steps {
+                sh 'trivy image --format table -o trivy-image-report.txt flask-app'
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'trivy-image-report.txt'
+                }
             }
         }
         stage('Run Containers') {
