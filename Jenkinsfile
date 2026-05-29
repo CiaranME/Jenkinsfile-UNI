@@ -1,5 +1,10 @@
 pipeline {
     agent any
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        IMAGE_NAME = 'ciaranme/flask-app'
+        IMAGE_TAG = "build-${BUILD_NUMBER}"
+    }
     stages {
         stage('Clean Up') {
             steps {
@@ -26,14 +31,14 @@ pipeline {
         }
         stage('Build Images') {
             steps {
-                sh 'docker build -t flask-app -f Dockerfile.flask .'
+                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f Dockerfile.flask .'
                 sh 'docker build -t nginx-app -f Dockerfile.nginx .'
             }
         }
         stage('Trivy Image Scan') {
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-                    sh 'trivy image --exit-code 1 --severity CRITICAL --format json -o trivy-image-report.json flask-app'
+                    sh 'trivy image --exit-code 1 --severity CRITICAL --format json -o trivy-image-report.json ${IMAGE_NAME}:${IMAGE_TAG}'
                 }
             }
             post {
@@ -47,9 +52,15 @@ pipeline {
                 input message: 'Scans complete. Review results and approve to deploy?', ok: 'Deploy'
             }
         }
+        stage('Push to DockerHub') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                sh 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
+            }
+        }
         stage('Run Containers') {
             steps {
-                sh 'docker run -d --name flask --network app-network flask-app'
+                sh 'docker run -d --name flask --network app-network ${IMAGE_NAME}:${IMAGE_TAG}'
                 sh 'docker run -d --name nginx --network app-network -p 80:80 nginx-app'
             }
         }
