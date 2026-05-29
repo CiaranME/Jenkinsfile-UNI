@@ -44,5 +44,12 @@ pipeline {
                 sh 'docker run -d --name nginx --network app-network -p 80:80 nginx-app'
             }
         }
+        stage('Unit Tests') {
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    sh 'python3 test_app.py'
+                }
+            }
+        }
     }
 }
