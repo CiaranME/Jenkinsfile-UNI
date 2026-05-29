@@ -9,7 +9,9 @@ pipeline {
         }
         stage('Trivy FS Scan') {
             steps {
-                sh 'trivy fs --format json -o trivy-fs-report.json .'
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    sh 'trivy fs --exit-code 1 --severity CRITICAL --format json -o trivy-fs-report.json .'
+                }
             }
             post {
                 always {
@@ -30,7 +32,9 @@ pipeline {
         }
         stage('Trivy Image Scan') {
             steps {
-                sh 'trivy image --format json -o trivy-image-report.json flask-app'
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    sh 'trivy image --exit-code 1 --severity CRITICAL --format json -o trivy-image-report.json flask-app'
+                }
             }
             post {
                 always {
